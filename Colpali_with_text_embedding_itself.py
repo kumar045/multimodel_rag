@@ -90,29 +90,16 @@ def extract_images_and_text(pdf_file):
     # Extract images and text from the PDF pages
     for page_number in range(min(pdf_doc.page_count, 5)):  # You can change this limit
         page = pdf_doc[page_number]
-        
         try:
-            # Check if page has embedded images
-            img_list = page.get_images(full=True)
-            if img_list:
-                for img_index, img in enumerate(img_list):
-                    xref = img[0]
-                    base_image = pdf_doc.extract_image(xref)
-                    image_bytes = base_image["image"]
-                    img = Image.open(io.BytesIO(image_bytes))
-                    images.append(img)
-                    st.success(f"Extracted image from page {page_number + 1} (image {img_index + 1})")
+           # If no embedded images, create a pixmap of the page
+           pix = page.get_pixmap(dpi=150)
+           img = Image.open(io.BytesIO(pix.tobytes("png")))
+           images.append(img)
+           st.warning(f"No embedded images on page {page_number + 1}. Used page rendering instead.")
             
-            else:
-                # If no embedded images, create a pixmap of the page
-                pix = page.get_pixmap(dpi=150)
-                img = Image.open(io.BytesIO(pix.tobytes("png")))
-                images.append(img)
-                st.warning(f"No embedded images on page {page_number + 1}. Used page rendering instead.")
-            
-            # Extract text
-            text = page.get_text()
-            texts.append(text)
+           # Extract text
+           text = page.get_text()
+           texts.append(text)
         
         except Exception as e:
             # Log the issue with image extraction
